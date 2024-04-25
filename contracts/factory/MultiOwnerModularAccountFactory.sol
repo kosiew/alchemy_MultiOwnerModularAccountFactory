@@ -52,7 +52,7 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
         address implementation,
         bytes32 multiOwnerPluginManifestHash,
         IEntryPoint entryPoint
-    ) {
+    ) Ownable2Step(owner) {
         _transferOwnership(owner);
         MULTI_OWNER_PLUGIN = multiOwnerPlugin;
         IMPL = implementation;
@@ -68,7 +68,10 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
     /// @dev The owner array must be in strictly ascending order and not include the 0 address.
     /// @param salt salt for create2
     /// @param owners address array of the owners
-    function createAccount(uint256 salt, address[] calldata owners) external returns (address addr) {
+    function createAccount(
+        uint256 salt,
+        address[] calldata owners
+    ) external returns (address addr) {
         if (!FactoryHelpers.isValidOwnerArray(owners)) {
             revert InvalidOwner();
         }
@@ -76,9 +79,18 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
         bytes[] memory pluginInitBytes = new bytes[](1);
         pluginInitBytes[0] = abi.encode(owners);
 
-        bytes32 combinedSalt = FactoryHelpers.getCombinedSalt(salt, pluginInitBytes[0]);
+        bytes32 combinedSalt = FactoryHelpers.getCombinedSalt(
+            salt,
+            pluginInitBytes[0]
+        );
         addr = Create2.computeAddress(
-            combinedSalt, keccak256(abi.encodePacked(type(ERC1967Proxy).creationCode, abi.encode(IMPL, "")))
+            combinedSalt,
+            keccak256(
+                abi.encodePacked(
+                    type(ERC1967Proxy).creationCode,
+                    abi.encode(IMPL, "")
+                )
+            )
         );
 
         // short circuit if exists
@@ -92,7 +104,10 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
             bytes32[] memory manifestHashes = new bytes32[](1);
             manifestHashes[0] = _MULTI_OWNER_PLUGIN_MANIFEST_HASH;
 
-            IAccountInitializable(addr).initialize(plugins, abi.encode(manifestHashes, pluginInitBytes));
+            IAccountInitializable(addr).initialize(
+                plugins,
+                abi.encode(manifestHashes, pluginInitBytes)
+            );
         }
     }
 
@@ -100,7 +115,10 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
     /// @dev only callable by owner
     /// @param unstakeDelay unstake delay for the stake
     /// @param amount amount of native currency to stake
-    function addStake(uint32 unstakeDelay, uint256 amount) external payable onlyOwner {
+    function addStake(
+        uint32 unstakeDelay,
+        uint256 amount
+    ) external payable onlyOwner {
         ENTRYPOINT.addStake{value: amount}(unstakeDelay);
     }
 
@@ -122,9 +140,13 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
     /// @param to address to send erc20s or native currency to
     /// @param token address of the token to withdraw, 0 address for native currency
     /// @param amount amount of the token to withdraw in case of rebasing tokens
-    function withdraw(address payable to, address token, uint256 amount) external onlyOwner {
+    function withdraw(
+        address payable to,
+        address token,
+        uint256 amount
+    ) external onlyOwner {
         if (token == address(0)) {
-            (bool success,) = to.call{value: address(this).balance}("");
+            (bool success, ) = to.call{value: address(this).balance}("");
             if (!success) {
                 revert TransferFailed();
             }
@@ -138,7 +160,10 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
     /// @param salt salt for additional entropy for create2
     /// @param owners array of addresses of the owner
     /// @return address of counterfactual account
-    function getAddress(uint256 salt, address[] calldata owners) external view returns (address) {
+    function getAddress(
+        uint256 salt,
+        address[] calldata owners
+    ) external view returns (address) {
         // Array can't be empty.
         if (owners.length == 0) {
             revert OwnersArrayEmpty();
@@ -154,10 +179,16 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
             revert InvalidOwner();
         }
 
-        return Create2.computeAddress(
-            FactoryHelpers.getCombinedSalt(salt, abi.encode(owners)),
-            keccak256(abi.encodePacked(type(ERC1967Proxy).creationCode, abi.encode(IMPL, "")))
-        );
+        return
+            Create2.computeAddress(
+                FactoryHelpers.getCombinedSalt(salt, abi.encode(owners)),
+                keccak256(
+                    abi.encodePacked(
+                        type(ERC1967Proxy).creationCode,
+                        abi.encode(IMPL, "")
+                    )
+                )
+            );
     }
 
     /// @notice Overriding to disable renounce ownership in Ownable
