@@ -26,6 +26,7 @@ import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {FactoryHelpers} from "../helpers/FactoryHelpers.sol";
 import {IEntryPoint} from "../interfaces/erc4337/IEntryPoint.sol";
 import {IAccountInitializable} from "../interfaces/IAccountInitializable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Multi Owner Plugin Modular Account Factory
 /// @author Alchemy
@@ -52,7 +53,7 @@ contract MultiOwnerModularAccountFactory is Ownable2Step {
         address implementation,
         bytes32 multiOwnerPluginManifestHash,
         IEntryPoint entryPoint
-    ) Ownable2Step(owner) {
+    ) Ownable(owner) {
         _transferOwnership(owner);
         MULTI_OWNER_PLUGIN = multiOwnerPlugin;
         IMPL = implementation;

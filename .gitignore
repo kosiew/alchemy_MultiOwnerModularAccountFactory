@@ -1,2 +1,4 @@
 contracts-5f11/lib
 node_modules
+artifacts
+cache
