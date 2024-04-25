@@ -3,6 +3,10 @@ const { ethers } = require("hardhat");
 
 describe("Reentrancy Attack Test", function () {
   it("Should drain funds from the factory via reentrancy", async function () {
+    const Factory = await ethers.getContractFactory(
+      "MultiOwnerModularAccountFactory"
+    );
+
     const dummyOwnerAddress = ethers.Wallet.createRandom().address;
     const dummyMultiOwnerPluginAddress = ethers.Wallet.createRandom().address;
     const dummyImplementationAddress = ethers.Wallet.createRandom().address;
@@ -15,19 +19,21 @@ describe("Reentrancy Attack Test", function () {
     // get list of accounts
     const [deployer] = await ethers.getSigners();
 
-    const factory = ethers.deployContract(
-      "MultiOwnerModularAccountFactory",
-      [
-        deployer.address,
-        dummyMultiOwnerPluginAddress,
-        dummyImplementationAddress,
-        dummyMultiOwnerPluginManifestHash,
-        dummyEntryPointAddress
-      ],
-      { value: 1_000_000 }
+    const factory = await Factory.deploy(
+      deployer.address,
+      dummyMultiOwnerPluginAddress,
+      dummyImplementationAddress,
+      dummyMultiOwnerPluginManifestHash,
+      dummyEntryPointAddress
     );
 
     console.log(`Factory address: ${factory.address}`);
+
+    // Sending Ether to the factory
+    await deployer.sendTransaction({
+      to: factory.address,
+      value: ethers.parseEther("10") // Amount of Ether to send
+    });
 
     const Malicious = await ethers.getContractFactory("MaliciousContract");
     const malicious = await Malicious.deploy(factory.address);
