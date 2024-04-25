@@ -15,17 +15,13 @@ describe("Reentrancy Attack Test", function () {
     // get list of accounts
     const [deployer] = await ethers.getSigners();
 
-    const factory = ethers.deployContract(
-      "MultiOwnerModularAccountFactory",
-      [
-        deployer.address,
-        dummyMultiOwnerPluginAddress,
-        dummyImplementationAddress,
-        dummyMultiOwnerPluginManifestHash,
-        dummyEntryPointAddress
-      ],
-      { value: 1_000_000 }
-    );
+    const factory = ethers.deployContract("MultiOwnerModularAccountFactory", [
+      deployer.address,
+      dummyMultiOwnerPluginAddress,
+      dummyImplementationAddress,
+      dummyMultiOwnerPluginManifestHash,
+      dummyEntryPointAddress
+    ]);
 
     console.log(`Factory address: ${factory.address}`);
 
